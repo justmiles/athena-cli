@@ -19,12 +19,40 @@ Flags:
 
 ## Examples
 
+### Running Queries
+
+```shell
+> athena query --sql "SELECT now() as Rightnow"
+"Rightnow"
+"2020-08-31 19:21:55.721 UTC"
+```
+
+#### Execute query from file
+
+```shell
+> cat example.sql
+WITH dataset AS (
+  SELECT
+    'engineering' as department,
+    ARRAY['Sharon', 'John', 'Bob', 'Sally'] as users
+)
+SELECT department, names FROM dataset
+CROSS JOIN UNNEST(users) as t(names)
+
+> athena query --sql example.sql
+"department","names"
+"engineering","Sharon"
+"engineering","John"
+"engineering","Bob"
+"engineering","Sally"
+```
+
 ### Statistics
 
 The `--statistics` flag sends stats to stderr
 
 ```shell
-athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table --statistics
+> athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table --statistics
 Data Scanned: 0
 Execution Time: 372
 
@@ -40,14 +68,14 @@ The `--format` flag supports formating the outputs as json, csv, or table
 #### table output
 
 ```shell
-athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table
+> athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table
 | RIGHTNOW                    | TOMORROW                    |
 | --------------------------- | --------------------------- |
 | 2020-08-31 18:57:34.280 UTC | 2020-09-01 18:57:34.280 UTC |
 ```
 
 ```shell
-athena query --format table --sql "$(cat <<EOF
+> athena query --format table --sql "$(cat <<EOF
   WITH dataset AS (
     SELECT
       'engineering' as department,
@@ -70,7 +98,7 @@ EOF
 #### json output
 
 ```shell
-athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format json
+> athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format json
 [
   {
     "RightNow": "2020-08-31 18:57:43.201 UTC",
@@ -82,7 +110,7 @@ athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorr
 #### csv output
 
 ```shell
-athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format csv
+> athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format csv
 "RightNow","Tomorrow"
 "2020-08-31 18:57:49.606 UTC","2020-09-01 18:57:49.606 UTC"
 ```

@@ -35,6 +35,15 @@ type Format int
 // Execute a SQL query against Athena
 func (q *Query) Execute() (*os.File, error) {
 
+	// Check to see if `--sql` points to a file
+	if _, err := os.Stat(q.SQL); err == nil {
+		queryFromFile, err := ioutil.ReadFile(q.SQL)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to read query from file %s", q.SQL)
+		}
+		q.SQL = string(queryFromFile)
+	}
+
 	result, err := svc.StartQueryExecution(&athena.StartQueryExecutionInput{
 		QueryString: &q.SQL,
 		QueryExecutionContext: &athena.QueryExecutionContext{
