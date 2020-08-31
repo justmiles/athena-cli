@@ -121,5 +121,5 @@ EOF
 - [ ] Add common partition-by-date feature
 - [ ] Add `--workgroup` flag
 - [ ] Support most flags as environment variables (workgroup, output location, output format)
-- [ ] Don't choke if query doesn't return results (MSCK REPAIR TABLE)
+- [x] Don't choke if query doesn't return results (MSCK REPAIR TABLE)
 - [ ] SIGTERM or CTRL+C should cancel the query

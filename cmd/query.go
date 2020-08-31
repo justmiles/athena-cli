@@ -28,6 +28,11 @@ var QueryCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		// Don't choke on empty queries
+		if err == nil {
+			return
+		}
+
 		// Clean up
 		defer lib.CleanCache(file.Name())
 
