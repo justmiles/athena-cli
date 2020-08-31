@@ -11,10 +11,10 @@ Flags:
   -d, --database string        Athena database to query (default "default")
   -f, --format string          format the output as either json, csv, or table (default "csv")
   -h, --help                   help for query
-      --jmespath string        optional JMESPath to further filter or format results. See jmespath.org for more.
       --output-bucket string   S3 bucket for Athena query results (default "aws-athena-query-results-<account>-<region>")
       --output-prefix string   S3 key prefix for Athena query results
-  -s, --sql string             SQL query to execute
+  -s, --sql string             SQL query to execute. Can be a file or raw query
+      --statistics             print query statistics to stderr
 ```
 
 ## Examples
@@ -123,4 +123,3 @@ EOF
 - [ ] Support most flags as environment variables (workgroup, output location, output format)
 - [ ] Don't choke if query doesn't return results (MSCK REPAIR TABLE)
 - [ ] SIGTERM or CTRL+C should cancel the query
-
