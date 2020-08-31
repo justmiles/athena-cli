@@ -41,9 +41,10 @@ var QueryCmd = &cobra.Command{
 
 func init() {
 	QueryCmd.PersistentFlags().StringVar(&q.OutputBucket, "output-bucket", outputBucketDefault, "S3 bucket for Athena query results")
-	QueryCmd.PersistentFlags().StringVar(&q.OutputBucket, "output-prefix", "", "S3 key prefix for Athena query results")
+	QueryCmd.PersistentFlags().StringVar(&q.OutputPrefix, "output-prefix", "", "S3 key prefix for Athena query results")
 	QueryCmd.PersistentFlags().StringVarP(&q.Database, "database", "d", "default", "Athena database to query")
 	QueryCmd.PersistentFlags().StringVarP(&q.SQL, "sql", "s", "", "SQL query to execute")
 	QueryCmd.PersistentFlags().StringVarP(&q.Format, "format", "f", "csv", "format the output as either json, csv, or table")
 	QueryCmd.PersistentFlags().StringVar(&q.JMESPath, "jmespath", "", "optional JMESPath to further filter or format results. See jmespath.org for more.")
+	QueryCmd.PersistentFlags().BoolVar(&q.Statistics, "statistics", false, "print query statistics to stderr")
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -17,10 +18,12 @@ import (
 // Query ...
 type Query struct {
 	OutputBucket string
+	OutputPrefix string
 	Database     string
 	SQL          string
 	Format       string
 	JMESPath     string
+	Statistics   bool
 }
 
 // Format is an enumeration of available query output formats
@@ -38,7 +41,7 @@ func (q *Query) Execute() (*os.File, error) {
 			Database: &q.Database,
 		},
 		ResultConfiguration: &athena.ResultConfiguration{
-			OutputLocation: aws.String("s3://" + q.OutputBucket),
+			OutputLocation: aws.String("s3://" + path.Join(q.OutputBucket, q.OutputPrefix)),
 		},
 	})
 
@@ -53,6 +56,7 @@ func (q *Query) Execute() (*os.File, error) {
 	var qrop *athena.GetQueryExecutionOutput
 	duration := time.Duration(2) * time.Second
 
+	// Wait until query finishes
 	for {
 		qrop, err = svc.GetQueryExecution(&queryExecutionInput)
 		if err != nil {
@@ -66,7 +70,14 @@ func (q *Query) Execute() (*os.File, error) {
 		logrus.Debugf("Query Execution Status: %s\n", *qrop.QueryExecution.Status.State)
 
 		time.Sleep(duration)
+	}
 
+	if q.Statistics {
+		println(fmt.Sprintf(
+			"Data Scanned: %d\nExecution Time: %d\n",
+			*qrop.QueryExecution.Statistics.DataScannedInBytes,
+			*qrop.QueryExecution.Statistics.TotalExecutionTimeInMillis,
+		))
 	}
 
 	if *qrop.QueryExecution.Status.State == "SUCCEEDED" {
@@ -100,8 +111,7 @@ func (q *Query) Execute() (*os.File, error) {
 		return file, nil
 	}
 
-	return nil, fmt.Errorf("query %s", *qrop.QueryExecution.Status.State)
-
+	return nil, fmt.Errorf("query state: %s\n\t%s", *qrop.QueryExecution.Status.State, *qrop.QueryExecution.Status.StateChangeReason)
 }
 
 // ExecuteToStdout executes the query and returns the results to stdout

@@ -17,6 +17,76 @@ Flags:
   -s, --sql string             SQL query to execute
 ```
 
+## Examples
+
+### Statistics
+
+The `--statistics` flag sends stats to stderr
+
+```shell
+athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table --statistics
+Data Scanned: 0
+Execution Time: 372
+
+| RIGHTNOW                    | TOMORROW                    |
+| --------------------------- | --------------------------- |
+| 2020-08-31 19:04:39.301 UTC | 2020-09-01 19:04:39.301 UTC |
+```
+
+### Output Formats
+
+The `--format` flag supports formating the outputs as json, csv, or table
+
+#### table output
+
+```shell
+athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table
+| RIGHTNOW                    | TOMORROW                    |
+| --------------------------- | --------------------------- |
+| 2020-08-31 18:57:34.280 UTC | 2020-09-01 18:57:34.280 UTC |
+```
+
+```shell
+athena-cli query --format table --sql "$(cat <<EOF
+  WITH dataset AS (
+    SELECT
+      'engineering' as department,
+      ARRAY['Sharon', 'John', 'Bob', 'Sally'] as users
+  )
+  SELECT department, names FROM dataset
+  CROSS JOIN UNNEST(users) as t(names)
+EOF
+)"
+
+| DEPARTMENT  | NAMES  |
+| ----------- | ------ |
+| engineering | Sharon |
+| engineering | John   |
+| engineering | Bob    |
+| engineering | Sally  |
+
+```
+
+#### json output
+
+```shell
+athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format json
+[
+  {
+    "RightNow": "2020-08-31 18:57:43.201 UTC",
+    "Tomorrow": "2020-09-01 18:57:43.201 UTC"
+  }
+]
+```
+
+#### csv output
+
+```shell
+athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format csv
+"RightNow","Tomorrow"
+"2020-08-31 18:57:49.606 UTC","2020-09-01 18:57:49.606 UTC"
+```
+
 ## Roadmap
 
 - [x] Support CSV, JSON, and ASCII table
