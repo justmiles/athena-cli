@@ -23,7 +23,16 @@ var QueryCmd = &cobra.Command{
 			q.OutputBucket = fmt.Sprintf("aws-athena-query-results-%s-%s", lib.AccountID(), lib.Region())
 		}
 
-		err := q.ExecuteToStdout()
+		file, err := q.Execute()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Clean up
+		defer lib.CleanCache(file.Name())
+
+		err = lib.OutputData(q.Format, q.JMESPath, file)
+
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -31,7 +40,10 @@ var QueryCmd = &cobra.Command{
 }
 
 func init() {
-	QueryCmd.PersistentFlags().StringVar(&q.OutputBucket, "s3-output-bucket", outputBucketDefault, "S3 output bucket for Athena query results")
-	QueryCmd.PersistentFlags().StringVar(&q.Database, "database", "default", "Athena database to query")
-	QueryCmd.PersistentFlags().StringVar(&q.SQL, "sql", "", "SQL query to execute")
+	QueryCmd.PersistentFlags().StringVar(&q.OutputBucket, "output-bucket", outputBucketDefault, "S3 bucket for Athena query results")
+	QueryCmd.PersistentFlags().StringVar(&q.OutputBucket, "output-prefix", "", "S3 key prefix for Athena query results")
+	QueryCmd.PersistentFlags().StringVarP(&q.Database, "database", "d", "default", "Athena database to query")
+	QueryCmd.PersistentFlags().StringVarP(&q.SQL, "sql", "s", "", "SQL query to execute")
+	QueryCmd.PersistentFlags().StringVarP(&q.Format, "format", "f", "csv", "format the output as either json, csv, or table")
+	QueryCmd.PersistentFlags().StringVar(&q.JMESPath, "jmespath", "", "optional JMESPath to further filter or format results. See jmespath.org for more.")
 }

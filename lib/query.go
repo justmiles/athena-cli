@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/athena"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	csvmap "github.com/recursionpharma/go-csv-map"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,7 +19,15 @@ type Query struct {
 	OutputBucket string
 	Database     string
 	SQL          string
+	Format       string
+	JMESPath     string
 }
+
+// Format is an enumeration of available query output formats
+// ENUM(
+// json, csv, table
+// )
+type Format int
 
 // Execute a SQL query against Athena
 func (q *Query) Execute() (*os.File, error) {
@@ -75,7 +83,16 @@ func (q *Query) Execute() (*os.File, error) {
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("Unable to download query results for  %q, %v", *result.QueryExecutionId, err)
+			if aerr, ok := err.(awserr.Error); ok {
+				switch aerr.Code() {
+				case s3.ErrCodeNoSuchBucket:
+					return nil, fmt.Errorf("Unable to download query results for %q. Bucket %s does not exist", *result.QueryExecutionId, q.OutputBucket)
+				case s3.ErrCodeNoSuchKey:
+					return nil, nil
+				default:
+					return nil, fmt.Errorf("Unable to download query results for %q, %v", *result.QueryExecutionId, err)
+				}
+			}
 		}
 
 		logrus.Debugf("results cached to disk %s (%d bytes)", file.Name(), numBytes)
@@ -96,44 +113,15 @@ func (q *Query) ExecuteToStdout() error {
 	}
 
 	// Clean up
-	defer cleanCache(file.Name())
+	defer CleanCache(file.Name())
 
-	sb, err := ioutil.ReadFile(file.Name())
-	if err != nil {
-		return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
-	}
-
-	fmt.Println(string(sb))
+	OutputData(q.Format, q.JMESPath, file)
 
 	return nil
 }
 
-// ExecuteToMap returns Athena query results as a map
-func (q *Query) ExecuteToMap() ([]map[string]string, error) {
-	file, err := q.Execute()
-	if err != nil {
-		return nil, err
-	}
-
-	// Clean up
-	defer cleanCache(file.Name())
-
-	reader := csvmap.NewReader(file)
-
-	reader.Columns, err = reader.ReadHeader()
-	if err != nil {
-		return nil, err
-	}
-
-	records, err := reader.ReadAll()
-	if err != nil {
-		return nil, err
-	}
-
-	return records, nil
-}
-
-func cleanCache(fileName string) {
+// CleanCache deletes any tmp files used
+func CleanCache(fileName string) {
 	logrus.Debugf("deleting cached query results %s", fileName)
 	err := os.Remove(fileName)
 	if err != nil {
