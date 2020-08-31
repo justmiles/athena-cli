@@ -1,11 +1,11 @@
-# athena-cli
+# Athena CLI
 
 Run SQL statements against Amazon Athena and return results to stdout
 
 ## Usage
 
 ```
-athena-cli query --help
+athena query --help
 
 Flags:
   -d, --database string        Athena database to query (default "default")
@@ -24,7 +24,7 @@ Flags:
 The `--statistics` flag sends stats to stderr
 
 ```shell
-athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table --statistics
+athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table --statistics
 Data Scanned: 0
 Execution Time: 372
 
@@ -40,14 +40,14 @@ The `--format` flag supports formating the outputs as json, csv, or table
 #### table output
 
 ```shell
-athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table
+athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format table
 | RIGHTNOW                    | TOMORROW                    |
 | --------------------------- | --------------------------- |
 | 2020-08-31 18:57:34.280 UTC | 2020-09-01 18:57:34.280 UTC |
 ```
 
 ```shell
-athena-cli query --format table --sql "$(cat <<EOF
+athena query --format table --sql "$(cat <<EOF
   WITH dataset AS (
     SELECT
       'engineering' as department,
@@ -70,7 +70,7 @@ EOF
 #### json output
 
 ```shell
-athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format json
+athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format json
 [
   {
     "RightNow": "2020-08-31 18:57:43.201 UTC",
@@ -82,7 +82,7 @@ athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as To
 #### csv output
 
 ```shell
-athena-cli query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format csv
+athena query --sql "SELECT now() as RightNow, now() + interval '1' day as Tomorrow" --format csv
 "RightNow","Tomorrow"
 "2020-08-31 18:57:49.606 UTC","2020-09-01 18:57:49.606 UTC"
 ```

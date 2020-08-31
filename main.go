@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 
 func main() {
 	rootCmd.Version = version
-	rootCmd.SetVersionTemplate(`{{printf "%s" .version}}
+	rootCmd.SetVersionTemplate(`{{printf "%s" .Version}}
 `)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
