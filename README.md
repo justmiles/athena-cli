@@ -7,3 +7,4 @@ Run SQL statements against Amazon Athena and return results to stdout
 - [ ] Add common partition-by-date feature
 - [ ] Add `--workgroup` flag
 - [ ] Support most flags as environment variables (workgroup, output location, output format)
+- [ ] Don't choke if query doesn't return results (MSCK REPAIR TABLE)
