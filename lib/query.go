@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/athena"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/dustin/go-humanize"
 	"github.com/sirupsen/logrus"
 )
 
@@ -83,9 +84,9 @@ func (q *Query) Execute() (*os.File, error) {
 
 	if q.Statistics {
 		println(fmt.Sprintf(
-			"Data Scanned: %d\nExecution Time: %d\n",
-			*qrop.QueryExecution.Statistics.DataScannedInBytes,
-			*qrop.QueryExecution.Statistics.TotalExecutionTimeInMillis,
+			"Data Scanned: %s\nExecution Time: %s\n",
+			humanize.Bytes(uint64(*qrop.QueryExecution.Statistics.DataScannedInBytes)),
+			humanizeDuration(time.Duration(*qrop.QueryExecution.Statistics.TotalExecutionTimeInMillis)*time.Millisecond),
 		))
 	}
 

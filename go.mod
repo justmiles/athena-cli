@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/aws/aws-sdk-go v1.34.13
+	github.com/dustin/go-humanize v1.0.0
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/recursionpharma/go-csv-map v0.0.0-20160524001940-792523c65ae9
 	github.com/sirupsen/logrus v1.6.0
