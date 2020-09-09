@@ -135,7 +135,7 @@ func (q *Query) ExecuteToStdout() error {
 	// Clean up
 	defer CleanCache(file.Name())
 
-	OutputData(q.Format, q.JMESPath, file)
+	RenderQueryResults(q.Format, q.JMESPath, file)
 
 	return nil
 }

@@ -36,7 +36,7 @@ var QueryCmd = &cobra.Command{
 		// Clean up
 		defer lib.CleanCache(file.Name())
 
-		err = lib.OutputData(q.Format, q.JMESPath, file)
+		err = lib.RenderQueryResults(q.Format, q.JMESPath, file)
 
 		if err != nil {
 			log.Fatal(err)
