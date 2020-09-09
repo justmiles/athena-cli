@@ -26,8 +26,6 @@ var HistoryCmd = &cobra.Command{
 		}
 
 		err = lib.RenderHistoryResults(h, q.Format)
-		// err = lib.RenderAsTable(h)
-		// err = lib.RenderAsCSV(h)
 
 		if err != nil {
 			log.Fatal(err)
