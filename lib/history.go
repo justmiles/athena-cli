@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"encoding/base64"
 	"log"
 	"time"
 
@@ -24,9 +25,9 @@ type HistoricalExecution struct {
 }
 
 // ListHistory returns query results per workgroup
-func ListHistory(maxResults int) (h []HistoricalExecution, err error) {
+func ListHistory(maxResults int, historyCmdWorkgroup string) (h []HistoricalExecution, err error) {
 	params := &athena.ListQueryExecutionsInput{
-		// WorkGroup
+		WorkGroup: aws.String(historyCmdWorkgroup),
 	}
 
 	if maxResults < 50 {
@@ -60,7 +61,7 @@ func getQueryExecution(ids []*string) (h []HistoricalExecution) {
 	for _, e := range o.QueryExecutions {
 
 		he := HistoricalExecution{
-			Query:                      *e.Query,
+			Query:                      base64.StdEncoding.EncodeToString([]byte(*e.Query)),
 			QueryExecutionID:           *e.QueryExecutionId,
 			OutputLocation:             *e.ResultConfiguration.OutputLocation,
 			State:                      *e.Status.State,
