@@ -123,3 +123,5 @@ EOF
 - [ ] Support most flags as environment variables (workgroup, output location, output format)
 - [x] Don't choke if query doesn't return results (MSCK REPAIR TABLE)
 - [ ] SIGTERM or CTRL+C should cancel the query
+- [ ] Support a `--cached <n minutes>` flag that will just download the results of a previous query if it is older than N minutes
+- [ ] 

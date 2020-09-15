@@ -14,10 +14,16 @@ import (
 // RenderQueryResults formats query results a in the
 // desired format and sends to stdout
 func RenderQueryResults(outputFormat string, query string, file *os.File) error {
+	var err error
 
 	if outputFormat == "json" {
 
 		reader := csvmap.NewReader(file)
+		reader.Columns, err = reader.ReadHeader()
+		if err != nil {
+			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
+		}
+
 		records, err := reader.ReadAll()
 		if err != nil {
 			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
@@ -30,9 +36,12 @@ func RenderQueryResults(outputFormat string, query string, file *os.File) error 
 	}
 
 	if outputFormat == "table" {
-
 		reader := csvmap.NewReader(file)
-		reader.Columns, _ = reader.ReadHeader()
+		reader.Columns, err = reader.ReadHeader()
+		if err != nil {
+			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
+		}
+
 		records, err := reader.ReadAll()
 		if err != nil {
 			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
