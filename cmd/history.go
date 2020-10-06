@@ -37,5 +37,5 @@ func init() {
 	HistoryCmd.PersistentFlags().IntVarP(&historyCmdMaxResults, "max", "m", 100, "maximum results")
 	HistoryCmd.PersistentFlags().StringVarP(&q.Format, "format", "f", "csv", "format the output as either json, csv, or table")
 	// TODO: Add support for selecting a workgroup
-	HistoryCmd.PersistentFlags().StringVarP(&historyCmdWorkgroup, "workgroup", "w", "default", "workgroup")
+	HistoryCmd.PersistentFlags().StringVarP(&historyCmdWorkgroup, "workgroup", "w", "primary", "workgroup")
 }
