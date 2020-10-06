@@ -13,5 +13,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/xitongsys/parquet-go v1.5.3
+	github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0
 	golang.org/x/sys v0.0.0-20200828194041-157a740278f4 // indirect
 )

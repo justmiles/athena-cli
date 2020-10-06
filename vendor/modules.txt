@@ -1,3 +1,5 @@
+# github.com/apache/thrift v0.0.0-20181112125854-24918abba929
+github.com/apache/thrift/lib/go/thrift
 # github.com/aws/aws-sdk-go v1.34.13
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/arn
@@ -53,10 +55,20 @@ github.com/dustin/go-humanize
 github.com/elliotchance/orderedmap
 # github.com/gocarina/gocsv v0.0.0-20200827134620-49f5c3fa2b3e
 github.com/gocarina/gocsv
+# github.com/golang/snappy v0.0.1
+github.com/golang/snappy
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/jmespath/go-jmespath v0.3.0
 github.com/jmespath/go-jmespath
+# github.com/klauspost/compress v1.10.5
+github.com/klauspost/compress/flate
+github.com/klauspost/compress/fse
+github.com/klauspost/compress/gzip
+github.com/klauspost/compress/huff0
+github.com/klauspost/compress/snappy
+github.com/klauspost/compress/zstd
+github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/konsorten/go-windows-terminal-sequences v1.0.3
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/mattn/go-runewidth v0.0.7
@@ -71,6 +83,19 @@ github.com/sirupsen/logrus
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
+# github.com/xitongsys/parquet-go v1.5.3
+github.com/xitongsys/parquet-go/common
+github.com/xitongsys/parquet-go/compress
+github.com/xitongsys/parquet-go/encoding
+github.com/xitongsys/parquet-go/layout
+github.com/xitongsys/parquet-go/marshal
+github.com/xitongsys/parquet-go/parquet
+github.com/xitongsys/parquet-go/schema
+github.com/xitongsys/parquet-go/source
+github.com/xitongsys/parquet-go/types
+github.com/xitongsys/parquet-go/writer
+# github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0
+github.com/xitongsys/parquet-go-source/local
 # golang.org/x/sys v0.0.0-20200828194041-157a740278f4
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix

@@ -2,25 +2,29 @@ package lib
 
 import (
 	"encoding/base64"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/athena"
+	"github.com/xitongsys/parquet-go-source/local"
+	"github.com/xitongsys/parquet-go/parquet"
+	"github.com/xitongsys/parquet-go/writer"
 )
 
 // HistoricalExecution ..
 type HistoricalExecution struct {
-	Query                      string
-	Catalog                    string
-	Database                   string
-	QueryExecutionID           string
-	OutputLocation             string
-	State                      string
-	WorkGroup                  string
-	TotalExecutionTimeInMillis int64
-	DataScannedInBytes         int64
-	Cost                       float64
+	Query                      string  `parquet:"name=query, type=UTF8, encoding=PLAIN"`
+	Catalog                    string  `parquet:"name=catalog, type=UTF8, encoding=PLAIN"`
+	Database                   string  `parquet:"name=database, type=UTF8, encoding=PLAIN"`
+	QueryExecutionID           string  `parquet:"name=queryexecutionid, type=UTF8, encoding=PLAIN"`
+	OutputLocation             string  `parquet:"name=outputlocation, type=UTF8, encoding=PLAIN"`
+	State                      string  `parquet:"name=state, type=UTF8, encoding=PLAIN"`
+	WorkGroup                  string  `parquet:"name=workgroup, type=UTF8, encoding=PLAIN"`
+	TotalExecutionTimeInMillis int64   `parquet:"name=total_execution_time_in_millis, type=INT64"`
+	DataScannedInBytes         int64   `parquet:"name=data_scanned_in_bytes, type=INT64"`
+	Cost                       float64 `parquet:"name=cost, type=DOUBLE"`
 	SubmissionDateTime         time.Time
 }
 
@@ -91,6 +95,39 @@ func getQueryExecution(ids []*string) (h []HistoricalExecution) {
 	return h
 }
 
+// RenderHistoricalExecutionAsParquet will render an interface to parquet.
+func RenderHistoricalExecutionAsParquet(h []HistoricalExecution) error {
+	const outputFilename = "output.parquet"
+	var err error
+	fw, err := local.NewLocalFileWriter(outputFilename)
+	if err != nil {
+		return fmt.Errorf("Can't create local file: %s", err)
+	}
+
+	//write
+	// n := reflect.TypeOf(iface)
+	pw, err := writer.NewParquetWriter(fw, new(HistoricalExecution), 4)
+	if err != nil {
+		return fmt.Errorf("Can't create parquet writer: %s", err)
+	}
+	pw.RowGroupSize = 128 * 1024 * 1024 //128M
+	pw.PageSize = 8 * 1024              //8K
+	pw.CompressionType = parquet.CompressionCodec_SNAPPY
+
+	for _, ss := range h {
+		if err = pw.Write(ss); err != nil {
+			log.Println("Write error", err)
+		}
+	}
+	if err = pw.WriteStop(); err != nil {
+		return fmt.Errorf("WriteStop error: %s", err)
+	}
+	fmt.Printf("Parquet file written to %s\n", outputFilename)
+	fw.Close()
+
+	return nil
+}
+
 // RenderHistoryResults ..
 func RenderHistoryResults(h []HistoricalExecution, outputFormat string) error {
 	switch outputFormat {
@@ -98,6 +135,8 @@ func RenderHistoryResults(h []HistoricalExecution, outputFormat string) error {
 		return RenderAsCSV(h)
 	case "table":
 		return RenderAsTable(h)
+	case "parquet":
+		return RenderHistoricalExecutionAsParquet(h)
 	default:
 		return RenderAsJSON(h)
 	}
