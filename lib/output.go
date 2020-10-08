@@ -129,7 +129,7 @@ func RenderAsCSV(i interface{}) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(data))
+	fmt.Print(string(data))
 	return nil
 
 }
@@ -143,7 +143,7 @@ func RenderAsJSON(i interface{}) error {
 		return err
 	}
 
-	fmt.Println(string(data))
+	fmt.Print(string(data))
 	return nil
 
 }
