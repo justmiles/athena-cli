@@ -149,7 +149,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 
 		output, _ := json.MarshalIndent(records, "", "  ")
 
-		if q.OutputFile == "stdout" {
+		if q.OutputFile == "" {
 			fmt.Println(string(output))
 		} else {
 			return ioutil.WriteFile(q.OutputFile, output, 0644)
@@ -172,7 +172,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 
 		var f *os.File
 
-		if q.OutputFile == "stdout" {
+		if q.OutputFile == "" {
 			f = os.Stdout
 		} else {
 			f, err = os.Create(q.OutputFile)
@@ -201,7 +201,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
 		}
 
-		if q.OutputFile == "stdout" {
+		if q.OutputFile == "" {
 			fmt.Println(string(sb))
 		} else {
 			return ioutil.WriteFile(q.OutputFile, sb, 0644)
@@ -248,7 +248,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 		f.SetCellStyle(sheetName, "A1", fmt.Sprintf("%s%d", lastColumn, 1), headerStyle)
 
 		// Ensure we write a .xlsx file
-		if q.OutputFile == "stdout" {
+		if q.OutputFile == "" {
 			q.OutputFile = "athena-query-results.xlsx"
 		}
 

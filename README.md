@@ -8,13 +8,14 @@ Run SQL statements against Amazon Athena and return results to stdout
 athena query --help
 
 Flags:
-  -d, --database string        Athena database to query (default "default")
-  -f, --format string          format the output as either json, csv, or table (default "csv")
-  -h, --help                   help for query
-      --output-bucket string   S3 bucket for Athena query results (default "aws-athena-query-results-<account>-<region>")
-      --output-prefix string   S3 key prefix for Athena query results
-  -s, --sql string             SQL query to execute. Can be a file or raw query
-      --statistics             print query statistics to stderr
+  -d, --database string               Athena database to query (default "default")
+  -f, --format string                 format the output as either json, csv, or table (default "csv")
+  -h, --help                          help for query
+  -o, --output string                 file name to write this content to. If empty, will write to stdout (default "")
+      --query-results-bucket string   S3 bucket for Athena query results (default "aws-athena-query-results-<account>-<region>")
+      --query-results-prefix string   S3 key prefix for Athena query results
+  -s, --sql string                    SQL query to execute. Can be a file or raw query
+      --statistics                    print query statistics to stderr
 ```
 
 ## Examples
@@ -118,10 +119,9 @@ EOF
 ## Roadmap
 
 - [x] Support CSV, JSON, and ASCII table
-- [ ] Add common partition-by-date feature
+- [x] Add common partition-by-date feature
 - [ ] Add `--workgroup` flag
 - [ ] Support most flags as environment variables (workgroup, output location, output format)
 - [x] Don't choke if query doesn't return results (MSCK REPAIR TABLE)
 - [ ] SIGTERM or CTRL+C should cancel the query
 - [ ] Support a `--cached <n minutes>` flag that will just download the results of a previous query if it is older than N minutes
-- [ ] 
