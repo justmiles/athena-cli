@@ -3,75 +3,12 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gocarina/gocsv"
 	"github.com/olekukonko/tablewriter"
-	csvmap "github.com/recursionpharma/go-csv-map"
 )
-
-// RenderQueryResults formats query results a in the
-// desired format and sends to stdout
-func RenderQueryResults(outputFormat string, query string, file *os.File) error {
-	var err error
-
-	if outputFormat == "json" {
-
-		reader := csvmap.NewReader(file)
-		reader.Columns, err = reader.ReadHeader()
-		if err != nil {
-			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
-		}
-
-		records, err := reader.ReadAll()
-		if err != nil {
-			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
-
-		}
-
-		output, _ := json.MarshalIndent(records, "", "  ")
-
-		fmt.Println(string(output))
-	}
-
-	if outputFormat == "table" {
-		reader := csvmap.NewReader(file)
-		reader.Columns, err = reader.ReadHeader()
-		if err != nil {
-			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
-		}
-
-		records, err := reader.ReadAll()
-		if err != nil {
-			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
-		}
-
-		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader(reader.Columns)
-		table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
-		table.SetCenterSeparator("|")
-
-		for _, record := range records {
-			table.Append(values(reader.Columns, record))
-		}
-
-		table.Render()
-
-	}
-
-	if outputFormat == "csv" {
-
-		sb, err := ioutil.ReadFile(file.Name())
-		if err != nil {
-			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
-		}
-
-		fmt.Println(string(sb))
-
-	}
-	return nil
-}
 
 func values(c []string, m map[string]string) []string {
 	values := make([]string, 0, len(m))
@@ -146,4 +83,22 @@ func RenderAsJSON(i interface{}) error {
 	fmt.Print(string(data))
 	return nil
 
+}
+
+// RenderAsXLSX will render an interface as XLSX
+func RenderAsXLSX(i interface{}) error {
+	f := excelize.NewFile()
+	// Create a new sheet.
+	index := f.NewSheet("Sheet2")
+	// Set value of a cell.
+	f.SetCellValue("Sheet2", "A2", "Hello world.")
+	f.SetCellValue("Sheet1", "B2", 100)
+	// Set active sheet of the workbook.
+	f.SetActiveSheet(index)
+	// Save spreadsheet by the given path.
+	if err := f.SaveAs("Book1.xlsx"); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }

@@ -19,8 +19,12 @@ var QueryCmd = &cobra.Command{
 	Short: "query Athena",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if q.OutputBucket == outputBucketDefault {
-			q.OutputBucket = fmt.Sprintf("aws-athena-query-results-%s-%s", lib.AccountID(), lib.Region())
+		_, err := lib.ParseFormat(q.Format)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if q.QueryResultsBucket == outputBucketDefault {
+			q.QueryResultsBucket = fmt.Sprintf("aws-athena-query-results-%s-%s", lib.AccountID(), lib.Region())
 		}
 
 		file, err := q.Execute()
@@ -36,7 +40,7 @@ var QueryCmd = &cobra.Command{
 		// Clean up
 		defer lib.CleanCache(file.Name())
 
-		err = lib.RenderQueryResults(q.Format, q.JMESPath, file)
+		err = q.RenderQueryResults(file)
 
 		if err != nil {
 			log.Fatal(err)
@@ -45,11 +49,12 @@ var QueryCmd = &cobra.Command{
 }
 
 func init() {
-	QueryCmd.PersistentFlags().StringVar(&q.OutputBucket, "output-bucket", outputBucketDefault, "S3 bucket for Athena query results")
-	QueryCmd.PersistentFlags().StringVar(&q.OutputPrefix, "output-prefix", "", "S3 key prefix for Athena query results")
+	QueryCmd.PersistentFlags().StringVar(&q.QueryResultsBucket, "query-results-bucket", outputBucketDefault, "S3 bucket for Athena query results")
+	QueryCmd.PersistentFlags().StringVar(&q.QueryResultsPrefix, "query-results-prefix", "", "S3 key prefix for Athena query results")
 	QueryCmd.PersistentFlags().StringVarP(&q.Database, "database", "d", "default", "Athena database to query")
 	QueryCmd.PersistentFlags().StringVarP(&q.SQL, "sql", "s", "", "SQL query to execute. Can be a file or raw query")
 	QueryCmd.PersistentFlags().StringVarP(&q.Format, "format", "f", "csv", "format the output as either json, csv, or table")
-	// QueryCmd.PersistentFlags().StringVar(&q.JMESPath, "jmespath", "", "optional JMESPath to further filter or format results. See jmespath.org for more.")
+	QueryCmd.PersistentFlags().StringVarP(&q.OutputFile, "output", "o", "stdout", "(optional) file name to write this content to")
 	QueryCmd.PersistentFlags().BoolVar(&q.Statistics, "statistics", false, "print query statistics to stderr")
+	// QueryCmd.PersistentFlags().StringVar(&q.JMESPath, "jmespath", "", "optional JMESPath to further filter or format results. See jmespath.org for more.")
 }

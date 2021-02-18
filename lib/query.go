@@ -1,35 +1,40 @@
 package lib
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"time"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/athena"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/dustin/go-humanize"
+	"github.com/olekukonko/tablewriter"
+	csvmap "github.com/recursionpharma/go-csv-map"
 	"github.com/sirupsen/logrus"
 )
 
 // Query ...
 type Query struct {
-	OutputBucket string
-	OutputPrefix string
-	Database     string
-	SQL          string
-	Format       string
-	JMESPath     string
-	Statistics   bool
+	OutputFile         string
+	QueryResultsBucket string
+	QueryResultsPrefix string
+	Database           string
+	SQL                string
+	Format             string
+	JMESPath           string
+	Statistics         bool
 }
 
 // Format is an enumeration of available query output formats
 // ENUM(
-// json, csv, table
+// json, csv, table, xlsx
 // )
 type Format int
 
@@ -51,7 +56,7 @@ func (q *Query) Execute() (*os.File, error) {
 			Database: &q.Database,
 		},
 		ResultConfiguration: &athena.ResultConfiguration{
-			OutputLocation: aws.String("s3://" + path.Join(q.OutputBucket, q.OutputPrefix)),
+			OutputLocation: aws.String("s3://" + path.Join(q.QueryResultsBucket, q.QueryResultsPrefix)),
 		},
 	})
 
@@ -99,7 +104,7 @@ func (q *Query) Execute() (*os.File, error) {
 
 		downloader := s3manager.NewDownloader(sess)
 		numBytes, err := downloader.Download(file, &s3.GetObjectInput{
-			Bucket: aws.String(q.OutputBucket),
+			Bucket: aws.String(q.QueryResultsBucket),
 			Key:    aws.String(*result.QueryExecutionId + ".csv"),
 		})
 
@@ -107,7 +112,7 @@ func (q *Query) Execute() (*os.File, error) {
 			if aerr, ok := err.(awserr.Error); ok {
 				switch aerr.Code() {
 				case s3.ErrCodeNoSuchBucket:
-					return nil, fmt.Errorf("Unable to download query results for %q. Bucket %s does not exist", *result.QueryExecutionId, q.OutputBucket)
+					return nil, fmt.Errorf("Unable to download query results for %q. Bucket %s does not exist", *result.QueryExecutionId, q.QueryResultsBucket)
 				case s3.ErrCodeNoSuchKey:
 					return nil, nil
 				default:
@@ -124,19 +129,136 @@ func (q *Query) Execute() (*os.File, error) {
 	return nil, fmt.Errorf("query state: %s\n\t%s", *qrop.QueryExecution.Status.State, *qrop.QueryExecution.Status.StateChangeReason)
 }
 
-// ExecuteToStdout executes the query and returns the results to stdout
-func (q *Query) ExecuteToStdout() error {
+// RenderQueryResults formats query results a in the
+// desired format and sends to stdout
+func (q *Query) RenderQueryResults(file *os.File) error {
+	var err error
 
-	file, err := q.Execute()
-	if err != nil {
-		return err
+	if q.Format == "json" {
+
+		reader := csvmap.NewReader(file)
+		reader.Columns, err = reader.ReadHeader()
+		if err != nil {
+			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
+		}
+
+		records, err := reader.ReadAll()
+		if err != nil {
+			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
+		}
+
+		output, _ := json.MarshalIndent(records, "", "  ")
+
+		if q.OutputFile == "stdout" {
+			fmt.Println(string(output))
+		} else {
+			return ioutil.WriteFile(q.OutputFile, output, 0644)
+		}
+
+		return nil
 	}
 
-	// Clean up
-	defer CleanCache(file.Name())
+	if q.Format == "table" {
+		reader := csvmap.NewReader(file)
+		reader.Columns, err = reader.ReadHeader()
+		if err != nil {
+			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
+		}
 
-	RenderQueryResults(q.Format, q.JMESPath, file)
+		records, err := reader.ReadAll()
+		if err != nil {
+			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
+		}
 
+		var f *os.File
+
+		if q.OutputFile == "stdout" {
+			f = os.Stdout
+		} else {
+			f, err = os.Create(q.OutputFile)
+			if err != nil {
+				return err
+			}
+		}
+
+		table := tablewriter.NewWriter(f)
+		table.SetHeader(reader.Columns)
+		table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+		table.SetCenterSeparator("|")
+
+		for _, record := range records {
+			table.Append(values(reader.Columns, record))
+		}
+
+		table.Render()
+
+	}
+
+	if q.Format == "csv" {
+
+		sb, err := ioutil.ReadFile(file.Name())
+		if err != nil {
+			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
+		}
+
+		if q.OutputFile == "stdout" {
+			fmt.Println(string(sb))
+		} else {
+			return ioutil.WriteFile(q.OutputFile, sb, 0644)
+		}
+
+	}
+
+	if q.Format == "xlsx" {
+
+		sheetName := "Sheet1"
+		reader := csvmap.NewReader(file)
+		reader.Columns, err = reader.ReadHeader()
+		if err != nil {
+			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
+		}
+
+		records, err := reader.ReadAll()
+		if err != nil {
+			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
+		}
+
+		f := excelize.NewFile()
+
+		// populate the header row
+		for i, value := range reader.Columns {
+			col, _ := excelize.ColumnNumberToName(i + 1)
+			f.SetCellStr(sheetName, fmt.Sprintf("%s%d", col, 1), value)
+		}
+
+		// populate the spreadsheet
+		for row, record := range records {
+			for i, value := range values(reader.Columns, record) {
+				col, _ := excelize.ColumnNumberToName(i + 1)
+				f.SetCellStr(sheetName, fmt.Sprintf("%s%d", col, row+2), value)
+			}
+		}
+
+		// Make the first row bold
+		headerStyle, err := f.NewStyle(`{"font":{"bold":true}}`)
+		if err != nil {
+			fmt.Println(err)
+		}
+		lastColumn, _ := excelize.ColumnNumberToName(len(reader.Columns))
+		f.SetCellStyle(sheetName, "A1", fmt.Sprintf("%s%d", lastColumn, 1), headerStyle)
+
+		// Ensure we write a .xlsx file
+		if q.OutputFile == "stdout" {
+			q.OutputFile = "athena-query-results.xlsx"
+		}
+
+		// Save spreadsheet by the given path.
+		if err := f.SaveAs(q.OutputFile); err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+	}
 	return nil
 }
 

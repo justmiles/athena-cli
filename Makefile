@@ -1,5 +1,5 @@
 build:
-	goreleaser release --snapshot
+	goreleaser release --snapshot --rm-dist
 
 publish:
-	goreleaser release
+	goreleaser release --rm-dist

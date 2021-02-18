@@ -1,6 +1,7 @@
 before:
   hooks:
     - go mod download
+    - go-enum --file lib/query.go
 
 builds:
   - env:
