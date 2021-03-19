@@ -152,6 +152,9 @@ func Partition(daysback int, databaseName, tableName, tmplate string, partitions
 }
 
 func permutate2dSlice(ss [][]string) [][]string {
+	if len(ss) == 0 {
+		return ss
+	}
 	returnSS := [][]string{}
 
 	if len(ss) == 1 {
