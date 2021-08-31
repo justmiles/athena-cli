@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gocarina/gocsv"
 	"github.com/olekukonko/tablewriter"
+	"github.com/xuri/excelize/v2"
 )
 
 func values(c []string, m map[string]string) []string {
@@ -22,12 +22,10 @@ func values(c []string, m map[string]string) []string {
 
 // RenderAsTable will render an interfact to table.
 func RenderAsTable(i interface{}) error {
-
 	data, _ := json.Marshal(i)
 
 	var d []map[string]interface{}
 	err := json.Unmarshal(data, &d)
-
 	if err != nil {
 		return err
 	}
@@ -56,33 +54,27 @@ func RenderAsTable(i interface{}) error {
 
 	table.Render()
 	return nil
-
 }
 
 // RenderAsCSV will render an interfact to table
 func RenderAsCSV(i interface{}) error {
-
 	data, err := gocsv.MarshalBytes(i)
 	if err != nil {
 		return err
 	}
 	fmt.Print(string(data))
 	return nil
-
 }
 
 // RenderAsJSON will render an interface as json
 func RenderAsJSON(i interface{}) error {
-
 	data, err := json.MarshalIndent(i, "", "  ")
-
 	if err != nil {
 		return err
 	}
 
 	fmt.Print(string(data))
 	return nil
-
 }
 
 // RenderAsXLSX will render an interface as XLSX
