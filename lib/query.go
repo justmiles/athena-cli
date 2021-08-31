@@ -30,6 +30,7 @@ type Query struct {
 	Format             string
 	JMESPath           string
 	Statistics         bool
+	WorkGroup          string
 }
 
 // Format is an enumeration of available query output formats
@@ -49,6 +50,13 @@ func (q *Query) Execute() (*os.File, error) {
 		q.SQL = string(queryFromFile)
 	}
 
+	var workgroup *string
+	if q.WorkGroup != "" {
+		workgroup = aws.String(q.WorkGroup)
+	} else {
+		workgroup = nil
+	}
+
 	result, err := svc.StartQueryExecution(&athena.StartQueryExecutionInput{
 		QueryString: &q.SQL,
 		QueryExecutionContext: &athena.QueryExecutionContext{
@@ -57,6 +65,7 @@ func (q *Query) Execute() (*os.File, error) {
 		ResultConfiguration: &athena.ResultConfiguration{
 			OutputLocation: aws.String("s3://" + path.Join(q.QueryResultsBucket, q.QueryResultsPrefix)),
 		},
+		WorkGroup: workgroup,
 	})
 	if err != nil {
 		return nil, err
