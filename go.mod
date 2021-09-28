@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/360EntSecGroup-Skylar/excelize/v2 v2.3.2
-	github.com/aws/aws-sdk-go v1.34.13
+	github.com/aws/aws-sdk-go v1.40.50
 	github.com/dustin/go-humanize v1.0.0
 	github.com/elliotchance/orderedmap v1.3.0
 	github.com/gocarina/gocsv v0.0.0-20200827134620-49f5c3fa2b3e

@@ -38,6 +38,12 @@ const (
 	// A specified condition was not satisfied.
 	ErrCodeConditionCheckFailureException = "ConditionCheckFailureException"
 
+	// ErrCodeConflictException for service response error code
+	// "ConflictException".
+	//
+	// The CreatePartitions API was called on a table that has indexes enabled.
+	ErrCodeConflictException = "ConflictException"
+
 	// ErrCodeCrawlerNotRunningException for service response error code
 	// "CrawlerNotRunningException".
 	//
@@ -73,6 +79,10 @@ const (
 	//
 	// The same unique identifier was associated with two different records.
 	ErrCodeIdempotentParameterMismatchException = "IdempotentParameterMismatchException"
+
+	// ErrCodeIllegalBlueprintStateException for service response error code
+	// "IllegalBlueprintStateException".
+	ErrCodeIllegalBlueprintStateException = "IllegalBlueprintStateException"
 
 	// ErrCodeIllegalWorkflowStateException for service response error code
 	// "IllegalWorkflowStateException".
@@ -153,12 +163,14 @@ var exceptionFromCode = map[string]func(protocol.ResponseMetadata) error{
 	"ConcurrentModificationException":      newErrorConcurrentModificationException,
 	"ConcurrentRunsExceededException":      newErrorConcurrentRunsExceededException,
 	"ConditionCheckFailureException":       newErrorConditionCheckFailureException,
+	"ConflictException":                    newErrorConflictException,
 	"CrawlerNotRunningException":           newErrorCrawlerNotRunningException,
 	"CrawlerRunningException":              newErrorCrawlerRunningException,
 	"CrawlerStoppingException":             newErrorCrawlerStoppingException,
 	"GlueEncryptionException":              newErrorEncryptionException,
 	"EntityNotFoundException":              newErrorEntityNotFoundException,
 	"IdempotentParameterMismatchException": newErrorIdempotentParameterMismatchException,
+	"IllegalBlueprintStateException":       newErrorIllegalBlueprintStateException,
 	"IllegalWorkflowStateException":        newErrorIllegalWorkflowStateException,
 	"InternalServiceException":             newErrorInternalServiceException,
 	"InvalidInputException":                newErrorInvalidInputException,
