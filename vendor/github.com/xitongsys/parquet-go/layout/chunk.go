@@ -23,8 +23,8 @@ func PagesToChunk(pages []*Page) *Chunk {
 
 	var maxVal interface{} = pages[0].MaxVal
 	var minVal interface{} = pages[0].MinVal
-	pT, cT := pages[0].Schema.Type, pages[0].Schema.ConvertedType
-	funcTable := common.FindFuncTable(pT, cT)
+	pT, cT, logT, omitStats := pages[0].Schema.Type, pages[0].Schema.ConvertedType, pages[0].Schema.LogicalType, pages[0].Info.OmitStats
+	funcTable := common.FindFuncTable(pT, cT, logT)
 
 	for i := 0; i < ln; i++ {
 		if pages[i].Header.DataPageHeader != nil {
@@ -34,8 +34,10 @@ func PagesToChunk(pages []*Page) *Chunk {
 		}
 		totalUncompressedSize += int64(pages[i].Header.UncompressedPageSize) + int64(len(pages[i].RawData)) - int64(pages[i].Header.CompressedPageSize)
 		totalCompressedSize += int64(len(pages[i].RawData))
-		minVal = common.Min(funcTable, minVal, pages[i].MinVal)
-		maxVal = common.Max(funcTable, maxVal, pages[i].MaxVal)
+		if !omitStats {
+			minVal = common.Min(funcTable, minVal, pages[i].MinVal)
+			maxVal = common.Max(funcTable, maxVal, pages[i].MaxVal)
+		}
 	}
 
 	chunk := new(Chunk)
@@ -54,7 +56,7 @@ func PagesToChunk(pages []*Page) *Chunk {
 	metaData.PathInSchema = pages[0].Path
 	metaData.Statistics = parquet.NewStatistics()
 
-	if maxVal != nil && minVal != nil {
+	if !omitStats && maxVal != nil && minVal != nil {
 		tmpBufMax := encoding.WritePlain([]interface{}{maxVal}, *pT)
 		tmpBufMin := encoding.WritePlain([]interface{}{minVal}, *pT)
 		if (cT != nil && *cT == parquet.ConvertedType_UTF8) ||
@@ -83,8 +85,8 @@ func PagesToDictChunk(pages []*Page) *Chunk {
 
 	var maxVal interface{} = pages[1].MaxVal
 	var minVal interface{} = pages[1].MinVal
-	pT, cT := pages[1].Schema.Type, pages[1].Schema.ConvertedType
-	funcTable := common.FindFuncTable(pT, cT)
+	pT, cT, logT, omitStats := pages[1].Schema.Type, pages[1].Schema.ConvertedType, pages[1].Schema.LogicalType, pages[0].Info.OmitStats
+	funcTable := common.FindFuncTable(pT, cT, logT)
 
 	for i := 0; i < len(pages); i++ {
 		if pages[i].Header.DataPageHeader != nil {
@@ -94,7 +96,7 @@ func PagesToDictChunk(pages []*Page) *Chunk {
 		}
 		totalUncompressedSize += int64(pages[i].Header.UncompressedPageSize) + int64(len(pages[i].RawData)) - int64(pages[i].Header.CompressedPageSize)
 		totalCompressedSize += int64(len(pages[i].RawData))
-		if i > 0 {
+		if !omitStats && i > 0 {
 			minVal = common.Min(funcTable, minVal, pages[i].MinVal)
 			maxVal = common.Max(funcTable, maxVal, pages[i].MaxVal)
 		}
@@ -118,7 +120,7 @@ func PagesToDictChunk(pages []*Page) *Chunk {
 	metaData.PathInSchema = pages[1].Path
 	metaData.Statistics = parquet.NewStatistics()
 
-	if maxVal != nil && minVal != nil {
+	if !omitStats && maxVal != nil && minVal != nil {
 		tmpBufMax := encoding.WritePlain([]interface{}{maxVal}, *pT)
 		tmpBufMin := encoding.WritePlain([]interface{}{minVal}, *pT)
 		if (cT != nil && *cT == parquet.ConvertedType_UTF8) ||

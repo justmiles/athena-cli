@@ -8,7 +8,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/athena"
@@ -17,6 +16,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	csvmap "github.com/recursionpharma/go-csv-map"
 	"github.com/sirupsen/logrus"
+	"github.com/xuri/excelize/v2"
 )
 
 // Query ...
@@ -29,6 +29,7 @@ type Query struct {
 	Format             string
 	JMESPath           string
 	Statistics         bool
+	WorkGroup          string
 }
 
 // Format is an enumeration of available query output formats
@@ -39,7 +40,6 @@ type Format int
 
 // Execute a SQL query against Athena
 func (q *Query) Execute() (*os.File, error) {
-
 	// Check to see if `--sql` points to a file
 	if _, err := os.Stat(q.SQL); err == nil {
 		queryFromFile, err := ioutil.ReadFile(q.SQL)
@@ -49,7 +49,7 @@ func (q *Query) Execute() (*os.File, error) {
 		q.SQL = string(queryFromFile)
 	}
 
-	result, err := svc.StartQueryExecution(&athena.StartQueryExecutionInput{
+	startQueryExecutionInput := athena.StartQueryExecutionInput{
 		QueryString: &q.SQL,
 		QueryExecutionContext: &athena.QueryExecutionContext{
 			Database: &q.Database,
@@ -57,8 +57,13 @@ func (q *Query) Execute() (*os.File, error) {
 		ResultConfiguration: &athena.ResultConfiguration{
 			OutputLocation: aws.String("s3://" + path.Join(q.QueryResultsBucket, q.QueryResultsPrefix)),
 		},
-	})
+	}
 
+	if q.WorkGroup != "" {
+		startQueryExecutionInput.WorkGroup = aws.String(q.WorkGroup)
+	}
+
+	result, err := svc.StartQueryExecution(&startQueryExecutionInput)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +110,6 @@ func (q *Query) Execute() (*os.File, error) {
 			Bucket: aws.String(q.QueryResultsBucket),
 			Key:    aws.String(*result.QueryExecutionId + ".csv"),
 		})
-
 		if err != nil {
 			if aerr, ok := err.(awserr.Error); ok {
 				switch aerr.Code() {
