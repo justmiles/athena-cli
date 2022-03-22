@@ -8,6 +8,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/athena"
+	"github.com/aws/aws-sdk-go/service/athena/athenaiface"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/sirupsen/logrus"
 )
@@ -16,15 +19,20 @@ var (
 	sess = session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
-	svc = athena.New(sess)
+	svc        athenaiface.AthenaAPI
+	downloader s3manageriface.DownloaderAPI
 )
 
 func init() {
+	svc = athena.New(sess)
+	downloader = s3manager.NewDownloader(sess)
+
 	lvl, ok := os.LookupEnv("LOG_LEVEL")
 	// LOG_LEVEL not set, let's default to info
 	if !ok {
 		lvl = "info"
 	}
+
 	// parse string, this is built-in feature of logrus
 	ll, err := logrus.ParseLevel(lvl)
 	if err != nil {

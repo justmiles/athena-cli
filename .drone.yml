@@ -5,5 +5,5 @@ steps:
 - name: test
   image: golang
   commands:
-  - go test
+  - go test -v -failfast -cover ./lib
   - go build

@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/athena"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/dustin/go-humanize"
 	"github.com/olekukonko/tablewriter"
 	csvmap "github.com/recursionpharma/go-csv-map"
@@ -45,7 +44,7 @@ func (q *Query) Execute() (*os.File, error) {
 	if _, err := os.Stat(q.SQL); err == nil {
 		queryFromFile, err := ioutil.ReadFile(q.SQL)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to read query from file %s", q.SQL)
+			return nil, fmt.Errorf("unable to read query from file %s", q.SQL)
 		}
 		q.SQL = string(queryFromFile)
 	}
@@ -99,10 +98,9 @@ func (q *Query) Execute() (*os.File, error) {
 
 		file, err := ioutil.TempFile("", "athena-query-results-"+*result.QueryExecutionId)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to create temp file %q, %v", *result.QueryExecutionId, err)
+			return nil, fmt.Errorf("unable to create temp file %q, %v", *result.QueryExecutionId, err)
 		}
 
-		downloader := s3manager.NewDownloader(sess)
 		numBytes, err := downloader.Download(file, &s3.GetObjectInput{
 			Bucket: aws.String(q.QueryResultsBucket),
 			Key:    aws.String(*result.QueryExecutionId + ".csv"),
@@ -112,11 +110,11 @@ func (q *Query) Execute() (*os.File, error) {
 			if aerr, ok := err.(awserr.Error); ok {
 				switch aerr.Code() {
 				case s3.ErrCodeNoSuchBucket:
-					return nil, fmt.Errorf("Unable to download query results for %q. Bucket %s does not exist", *result.QueryExecutionId, q.QueryResultsBucket)
+					return nil, fmt.Errorf("unable to download query results for %q. Bucket %s does not exist", *result.QueryExecutionId, q.QueryResultsBucket)
 				case s3.ErrCodeNoSuchKey:
 					return nil, nil
 				default:
-					return nil, fmt.Errorf("Unable to download query results for %q, %v", *result.QueryExecutionId, err)
+					return nil, fmt.Errorf("unable to download query results for %q, %v", *result.QueryExecutionId, err)
 				}
 			}
 		}
