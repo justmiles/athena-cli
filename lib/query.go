@@ -1,8 +1,11 @@
 package lib
 
 import (
+	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -34,7 +37,7 @@ type Query struct {
 
 // Format is an enumeration of available query output formats
 // ENUM(
-// json, csv, table, xlsx
+// json, csv, table, tsv, xlsx
 // )
 type Format int
 
@@ -136,7 +139,7 @@ func (q *Query) Execute() (*os.File, error) {
 func (q *Query) RenderQueryResults(file *os.File) error {
 	var err error
 
-	if q.Format == "json" {
+	if q.Format == FormatJson.String() {
 
 		reader := csvmap.NewReader(file)
 		reader.Columns, err = reader.ReadHeader()
@@ -160,7 +163,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 		return nil
 	}
 
-	if q.Format == "table" {
+	if q.Format == FormatTable.String() {
 		reader := csvmap.NewReader(file)
 		reader.Columns, err = reader.ReadHeader()
 		if err != nil {
@@ -196,7 +199,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 
 	}
 
-	if q.Format == "csv" {
+	if q.Format == FormatCsv.String() {
 
 		sb, err := ioutil.ReadFile(file.Name())
 		if err != nil {
@@ -211,7 +214,49 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 
 	}
 
-	if q.Format == "xlsx" {
+	if q.Format == FormatTsv.String() {
+		var w io.Writer
+
+		if q.OutputFile == "" {
+			w = os.Stdout
+		} else {
+			f, err := os.Create(q.OutputFile)
+			if err != nil {
+				return fmt.Errorf("Unable to create output file %q, %v", q.OutputFile, err)
+			}
+			defer f.Close()
+			w = bufio.NewWriter(f)
+		}
+
+		csvFile, err := os.Open(file.Name())
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer csvFile.Close()
+
+		reader := csv.NewReader(csvFile)
+		writer := csv.NewWriter(w)
+		defer writer.Flush()
+
+		writer.Comma = '\t'
+
+		for {
+			record, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
+			}
+
+			if err := writer.Write(record); err != nil {
+				return fmt.Errorf("error writing record to output %v", err)
+			}
+		}
+
+	}
+
+	if q.Format == FormatXlsx.String() {
 
 		sheetName := "Sheet1"
 		reader := csvmap.NewReader(file)
