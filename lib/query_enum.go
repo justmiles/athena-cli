@@ -13,6 +13,8 @@ import (
 const (
 	// FormatJson is a Format of type Json.
 	FormatJson Format = iota
+	// FormatJsonl is a Format of type Jsonl.
+	FormatJsonl
 	// FormatCsv is a Format of type Csv.
 	FormatCsv
 	// FormatTable is a Format of type Table.
@@ -23,14 +25,15 @@ const (
 	FormatXlsx
 )
 
-const _FormatName = "jsoncsvtabletsvxlsx"
+const _FormatName = "jsonjsonlcsvtabletsvxlsx"
 
 var _FormatMap = map[Format]string{
 	FormatJson:  _FormatName[0:4],
-	FormatCsv:   _FormatName[4:7],
-	FormatTable: _FormatName[7:12],
-	FormatTsv:   _FormatName[12:15],
-	FormatXlsx:  _FormatName[15:19],
+	FormatJsonl: _FormatName[4:9],
+	FormatCsv:   _FormatName[9:12],
+	FormatTable: _FormatName[12:17],
+	FormatTsv:   _FormatName[17:20],
+	FormatXlsx:  _FormatName[20:24],
 }
 
 // String implements the Stringer interface.
@@ -43,10 +46,11 @@ func (x Format) String() string {
 
 var _FormatValue = map[string]Format{
 	_FormatName[0:4]:   FormatJson,
-	_FormatName[4:7]:   FormatCsv,
-	_FormatName[7:12]:  FormatTable,
-	_FormatName[12:15]: FormatTsv,
-	_FormatName[15:19]: FormatXlsx,
+	_FormatName[4:9]:   FormatJsonl,
+	_FormatName[9:12]:  FormatCsv,
+	_FormatName[12:17]: FormatTable,
+	_FormatName[17:20]: FormatTsv,
+	_FormatName[20:24]: FormatXlsx,
 }
 
 // ParseFormat attempts to convert a string to a Format.

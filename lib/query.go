@@ -37,7 +37,7 @@ type Query struct {
 
 // Format is an enumeration of available query output formats
 // ENUM(
-// json, csv, table, tsv, xlsx
+// json, jsonl, csv, table, tsv, xlsx
 // )
 type Format int
 
@@ -139,8 +139,22 @@ func (q *Query) Execute() (*os.File, error) {
 func (q *Query) RenderQueryResults(file *os.File) error {
 	var err error
 
-	if q.Format == FormatJson.String() {
+	var outFile *os.File
 
+	if q.OutputFile == "" {
+		outFile = os.Stdout
+	} else {
+		outFile, err = os.Create(q.OutputFile)
+		if err != nil {
+			return err
+		}
+		defer outFile.Close()
+	}
+
+	writer := bufio.NewWriter(outFile)
+	defer writer.Flush()
+
+	if q.Format == FormatJson.String() {
 		reader := csvmap.NewReader(file)
 		reader.Columns, err = reader.ReadHeader()
 		if err != nil {
@@ -152,15 +166,40 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
 		}
 
-		output, _ := json.MarshalIndent(records, "", "  ")
-
-		if q.OutputFile == "" {
-			fmt.Println(string(output))
-		} else {
-			return ioutil.WriteFile(q.OutputFile, output, 0644)
+		output, err := json.MarshalIndent(records, "", "  ")
+		if err != nil {
+			return fmt.Errorf("Unable to marshal json %v", err)
 		}
 
+		writer.Write(output)
 		return nil
+
+	}
+
+	if q.Format == FormatJsonl.String() {
+
+		reader := csvmap.NewReader(file)
+		reader.Columns, err = reader.ReadHeader()
+		if err != nil {
+			return fmt.Errorf("Unable to read header from %q, %v", file.Name(), err)
+		}
+
+		for {
+			record, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
+			}
+
+			output, err := json.Marshal(record)
+			if err != nil {
+				return fmt.Errorf("Unable to convert output to jsonl, %v", err)
+			}
+			writer.WriteString(string(output) + "\n")
+		}
+
 	}
 
 	if q.Format == FormatTable.String() {
@@ -175,18 +214,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
 		}
 
-		var f *os.File
-
-		if q.OutputFile == "" {
-			f = os.Stdout
-		} else {
-			f, err = os.Create(q.OutputFile)
-			if err != nil {
-				return err
-			}
-		}
-
-		table := tablewriter.NewWriter(f)
+		table := tablewriter.NewWriter(outFile)
 		table.SetHeader(reader.Columns)
 		table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 		table.SetCenterSeparator("|")
@@ -200,33 +228,15 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 	}
 
 	if q.Format == FormatCsv.String() {
-
-		sb, err := ioutil.ReadFile(file.Name())
+		records, err := ioutil.ReadFile(file.Name())
 		if err != nil {
 			return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
 		}
 
-		if q.OutputFile == "" {
-			fmt.Println(string(sb))
-		} else {
-			return ioutil.WriteFile(q.OutputFile, sb, 0644)
-		}
-
+		writer.Write(records)
 	}
 
 	if q.Format == FormatTsv.String() {
-		var w io.Writer
-
-		if q.OutputFile == "" {
-			w = os.Stdout
-		} else {
-			f, err := os.Create(q.OutputFile)
-			if err != nil {
-				return fmt.Errorf("Unable to create output file %q, %v", q.OutputFile, err)
-			}
-			defer f.Close()
-			w = bufio.NewWriter(f)
-		}
 
 		csvFile, err := os.Open(file.Name())
 		if err != nil {
@@ -235,10 +245,10 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 		defer csvFile.Close()
 
 		reader := csv.NewReader(csvFile)
-		writer := csv.NewWriter(w)
-		defer writer.Flush()
+		w := csv.NewWriter(writer)
+		defer w.Flush()
 
-		writer.Comma = '\t'
+		w.Comma = '\t'
 
 		for {
 			record, err := reader.Read()
@@ -249,7 +259,7 @@ func (q *Query) RenderQueryResults(file *os.File) error {
 				return fmt.Errorf("Unable to read query results from %q, %v", file.Name(), err)
 			}
 
-			if err := writer.Write(record); err != nil {
+			if err := w.Write(record); err != nil {
 				return fmt.Errorf("error writing record to output %v", err)
 			}
 		}
